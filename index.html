@@ -1,0 +1,1079 @@
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, XCircle, Award } from 'lucide-react';
+
+const QuizApp = () => {
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [answeredQuestions, setAnsweredQuestions] = useState([]);
+  const [score, setScore] = useState(0);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const allQuestions = [
+    {
+      question: "Görüntü dosyasını çalışma alanına açmak için hangi fonksiyon kullanılır?",
+      options: ["imshow()", "imread()", "imwrite()", "image()", "imcrop()"],
+      correct: 1
+    },
+    {
+      question: "imshow() komutu ne iş yapar?",
+      options: ["Görüntüyü dosyaya kaydeder", "Görüntüyü gri tona dönüştürür", "Görüntüyü ekranda gösterir", "Görüntüyü filtreler", "Görüntü boyutunu değiştirir"],
+      correct: 2
+    },
+    {
+      question: "imshow(A,[]) komutundaki '[]' ne anlama gelir?",
+      options: ["Piksel aralığını otomatik ölçekler", "Renkleri ters çevirir", "Gürültü ekler", "Binary dönüştürür", "Görüntüyü kırpar"],
+      correct: 0
+    },
+    {
+      question: "imshowpair(A,B,'montage') komutu ne iş yapar?",
+      options: ["İki görüntüyü üst üste bindirir", "İki görüntüyü yan yana gösterir", "İki görüntünün farkını alır", "İki görüntüyü karıştırır", "İki görüntüyü renklendirir"],
+      correct: 1
+    },
+    {
+      question: "imshowpair(A,B,'diff') komutu ne gösterir?",
+      options: ["İki resmin fark görüntüsünü", "İki resmi yan yana gösterir", "İki resmi birleştirir", "İki resmi üst üste çizer", "Binary fark maskesini oluşturur"],
+      correct: 0
+    },
+    {
+      question: "imshowpair(A,B,'blend') komutu ne yapar?",
+      options: ["İki resmi üst üste karıştırarak gösterir", "Fark görüntüsünü gösterir", "İki resmi yan yana koyar", "A'yı B'ye ekler", "Histogramı birleştirir"],
+      correct: 0
+    },
+    {
+      question: "montage komutu hangi amaçla kullanılır?",
+      options: ["Görüntü boyutlandırmak", "Birden fazla görüntüyü bir arada göstermek", "Görüntüleri renklendirmek", "Gürültü eklemek", "Görüntüyü kaydetmek"],
+      correct: 1
+    },
+    {
+      question: "rgb2gray(A) komutu ne yapar?",
+      options: ["Renkli resmi gri seviyeye çevirir", "Gri resmi renklendirir", "Renk uzayını HSV'ye dönüştürür", "Sadece kırmızı kanalı çıkarır", "Parlaklığı artırır"],
+      correct: 0
+    },
+    {
+      question: "imresize(A, 0.5) komutu ne işe yarar?",
+      options: ["Resmi kırpar", "Resmi iki kat büyütür", "Resmi yarı boyuta küçültür", "Resmi yatay çevirir", "Resmin histogramını düzenler"],
+      correct: 2
+    },
+    {
+      question: "imresize(A, [200 300]) komutu ne yapar?",
+      options: ["Görüntüyü orijinal boyutuna çevirir", "Görüntüyü 200x300 boyutuna getirir", "Piksel değerlerini normalize eder", "Renkleri dönüştürür", "Histogramı çizer"],
+      correct: 1
+    },
+    {
+      question: "Hangi komut bir görüntünün negatifini oluşturur?",
+      options: ["imadd(A, 255)", "imcomplement(A)", "imsubtract(255, A)", "immultiply(A, -1)", "imadjust(A)"],
+      correct: 1
+    },
+    {
+      question: "imadd(A,B) komutu ne işe yarar?",
+      options: ["Görüntü farkı alır", "Görüntü toplama işlemi yapar", "Görüntüyü döndürür", "Görüntüye gürültü ekler", "Kontrast artırır"],
+      correct: 1
+    },
+    {
+      question: "Bir görüntünün parlaklığını artırmak için hangi komut kullanılabilir?",
+      options: ["imadd(A,50)", "imsubtract(A,50)", "imcomplement(A)", "imadjust(A,[0 1],[1 0])", "rgb2gray(A)"],
+      correct: 0
+    },
+    {
+      question: "Birbirine değen veya hafifçe üst üste binen nesneleri ayırmak için kullanılan fonksiyon hangisidir?",
+      options: ["imsegment(Im)", "watershed(Im)", "imsplit(Im)", "regiongrow(Im)", "bwlabel(Im)"],
+      correct: 1
+    },
+    {
+      question: "imhist(Im) komutu neyi gösterir?",
+      options: ["Piksel yoğunluk dağılımını", "Kenar tespit sonucunu", "Parlaklık haritasını", "Renk kanallarını", "Binary maske görüntüsünü"],
+      correct: 0
+    },
+    {
+      question: "Histogram eşitlemek için kullanılan fonksiyon hangisidir?",
+      options: ["imhist()", "histeq()", "imadjust()", "equalize()", "histmatch()"],
+      correct: 1
+    },
+    {
+      question: "im2bw(I, 0.45) komutu ne yapar?",
+      options: ["Görüntüyü renklendirir", "Görüntüyü 0.45 eşiğine göre siyah-beyaza dönüştürür", "Görüntüyü döndürür", "Gürültü ekler", "Histogram çizer"],
+      correct: 1
+    },
+    {
+      question: "edge(Im,'sobel') komutu ne yapar?",
+      options: ["Sobel filtresiyle kenar tespiti yapar", "Renk dönüşümü uygular", "Resmi döndürür", "Gri seviyeye çevirir", "Piksel değerlerini normalize eder"],
+      correct: 0
+    },
+    {
+      question: "Bir resmin belirli bölgesini kesmek için hangi komut kullanılır?",
+      options: ["imresize()", "imcrop()", "imadjust()", "imnoise()", "imread()"],
+      correct: 1
+    },
+    {
+      question: "imwrite() komutu ne iş yapar?",
+      options: ["Görüntüyü okur", "Görüntüyü kaydeder", "Görüntüyü gösterir", "Görüntüyü filtreler", "Görüntüyü renklendirir"],
+      correct: 1
+    },
+    {
+      question: "strel('disk',5) komutu ne üretir?",
+      options: ["Disk şeklinde yapısal eleman", "Filtre matrisi", "Renk dönüşüm tablosu", "Görüntü maskesi", "Binary filtre"],
+      correct: 0
+    },
+    {
+      question: "bwlabel(Im) komutu ne işe yarar?",
+      options: ["Nesne kenarlarını belirler", "İkili görüntüdeki bağlı bileşenleri numaralandırır", "Renk kanallarını ayırır", "Gürültüyü azaltır", "Görüntüyü döndürür"],
+      correct: 1
+    },
+    {
+      question: "rgb2hsv(Im) komutu ne yapar?",
+      options: ["Renkli resmi HSV uzayına dönüştürür", "Griye dönüştürür", "Binary hale getirir", "Renkleri ters çevirir", "Gürültü ekler"],
+      correct: 0
+    },
+    {
+      question: "imclearborder(Im) komutu ne yapar?",
+      options: ["Sınırda bulunan nesneleri kaldırır", "Resmin kenarlarını keskinleştirir", "Gürültü ekler", "Histogramı düzleştirir", "Resmi büyütür"],
+      correct: 0
+    },
+    {
+      question: "fliplr(Im) komutu ne işe yarar?",
+      options: ["Görüntüyü dikey çevirir", "Görüntüyü yatay çevirir", "Görüntüyü döndürür", "Histogramı gösterir", "Renk kanallarını ayırır"],
+      correct: 1
+    },
+    {
+      question: "flipud(Im) komutu ne yapar?",
+      options: ["Görüntüyü yatay çevirir", "Görüntüyü dikey çevirir", "Görüntüyü negatif yapar", "Görüntüyü kırpar", "Görüntüyü büyütür"],
+      correct: 1
+    },
+    {
+      question: "imrotate(Im, -90) komutu görüntüyü hangi yönde döndürür?",
+      options: ["Saat yönünde 90°", "Saat yönünün tersine 90°", "180°", "270°", "Yatay eksende çevirir"],
+      correct: 0
+    },
+    {
+      question: "filter2(h, Im) komutu ne işe yarar?",
+      options: ["1B konvolüsyon yapar", "2B filtre uygular", "Histogram çizer", "Gürültü ekler", "Renk uzayını değiştirir"],
+      correct: 1
+    },
+    {
+      question: "subplot(2,2,3) komutu ne işe yarar?",
+      options: ["2x2 pencerede 3. bölgeye grafik veya görüntü çizer", "Resmi 3 parçaya böler", "Histogramı gösterir", "Resmi kaydeder", "Binary dönüştürme yapar"],
+      correct: 0
+    },
+    {
+      question: "axis off komutu ne işe yarar?",
+      options: ["Görüntüyü kapatır", "Eksen çizgilerini gizler", "Görüntüyü büyütür", "Histogramı eşitler", "Renkleri ters çevirir"],
+      correct: 1
+    },
+    {
+      question: "isrgb(Im) komutu ne döndürür?",
+      options: ["Görüntü gri mi diye kontrol eder", "Görüntü RGB formatında mı diye kontrol eder", "Görüntü boyutunu verir", "Renk histogramını döndürür", "Binary maske üretir"],
+      correct: 1
+    },
+    {
+      question: "im2uint8(Im) komutu ne yapar?",
+      options: ["Görüntüyü 8 bit tamsayı formatına dönüştürür", "Görüntüyü griye çevirir", "Histogramı eşitler", "Binary hale getirir", "Gürültü ekler"],
+      correct: 0
+    },
+    {
+      question: "Renkli bir resmi kırmızı, yeşil ve mavi kanal olarak ayırmak için hangi işlem yapılır?",
+      options: ["cat()", "imsplit()", "rgb2gray()", "splitRGB()", "channel()"],
+      correct: 1
+    },
+    {
+      question: "Video dosyasını açmak ve frame olarak okumaya hazır hale getirmek için hangi fonksiyon kullanılır?",
+      options: ["İmplay", "VideoReader", "imread", "open", "VideoInput"],
+      correct: 1
+    },
+    {
+      question: "imbinarize(Im) komutu ne yapar?",
+      options: ["Görüntüyü griye çevirir", "Görüntüyü siyah-beyaz hale getirir", "Görüntüyü renklendirir", "Histogram oluşturur", "Gürültü ekler"],
+      correct: 1
+    },
+    {
+      question: "Görüntü kontrastını belirli bir aralığa genellikle [0, 1] aralığına yayan fonksiyon hangisidir?",
+      options: ["histeq(Im)", "imadjust(Im)", "imsharpen(Im)", "imcontrast(Im)", "adapthisteq(Im)"],
+      correct: 1
+    },
+    {
+      question: "imadjust(Im,[0 1],[1 0]) komutu ne yapar?",
+      options: ["Resmi griye çevirir", "Histogram eşitlemesi yapar", "Parlaklık aralığını ters çevirir", "Renk kanallarını ayırır", "Kenar tespiti yapar"],
+      correct: 2
+    },
+    {
+      question: "Hangisi bir resmi [0 1] aralığına ölçekler?",
+      options: ["mat2gray()", "normalize()", "imnormalize()", "norm()", "rescale()"],
+      correct: 0
+    },
+    {
+      question: "rgb2ycbcr(I) komutu ne yapar?",
+      options: ["RGB'den HSV'ye çevirir", "RGB'den YCbCr renk uzayına dönüştürür", "RGB'den griye çevirir", "Renkleri ters çevirir", "Kanal ayrıştırması yapar"],
+      correct: 1
+    },
+    {
+      question: "HSV renk uzayında H, S, V sırasıyla neyi temsil eder?",
+      options: ["Hue, Saturation, Value", "High, Soft, Visual", "Hue, Shape, Volume", "Hard, Sharp, Value", "Highlight, Shade, Value"],
+      correct: 0
+    },
+    {
+      question: "cat(3,R,G,B) işlemi ne yapar?",
+      options: ["Renk kanallarını birleştirir", "Renkleri ayırır", "Histogram eşitlemesi yapar", "Gürültü ekler", "Görüntüyü döndürür"],
+      correct: 0
+    },
+    {
+      question: "imsharpen(Im) fonksiyonu ne yapar?",
+      options: ["Görüntüyü keskinleştirir", "Görüntüyü yumuşatır", "Gürültü ekler", "Binary hale getirir", "Histogramı düzleştirir"],
+      correct: 0
+    },
+    {
+      question: "imnoise(I,'salt & pepper',0.02) komutu ne yapar?",
+      options: ["Gürültüyü temizler", "Tuz-biber gürültüsü ekler", "Renk ayarını değiştirir", "Histogramı düzeltir", "Görüntüyü döndürür"],
+      correct: 1
+    },
+    {
+      question: "bwarea(BW) komutu ne ölçer?",
+      options: ["Nesnelerin toplam alanını", "Kenar uzunluğunu", "Renk yoğunluğunu", "Histogramı", "Kontrastı"],
+      correct: 0
+    },
+    {
+      question: "imregionalmax(I) fonksiyonu ne yapar?",
+      options: ["Yerel maksimumları bulur", "Yerel minimumları bulur", "Histogram çizer", "Kenar belirler", "Renkleri değiştirir"],
+      correct: 0
+    },
+    {
+      question: "Görüntüde kontrastı ayarlamak için hangi fonksiyon kullanılır?",
+      options: ["histeq()", "imadjust()", "imresize()", "im2bw()", "bwlabel()"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki 'tuz-biber' gürültüsünü gidermek için en yaygın ve etkili olan filtreleme fonksiyonu hangisidir?",
+      options: ["imfilter(I, fspecial('average'))", "imgaussfilt(I)", "medfilt2(I)", "wiener2(I)", "edge(I, 'sobel')"],
+      correct: 2
+    },
+    {
+      question: "im2double(I) fonksiyonu ne yapar?",
+      options: ["Görüntüyü negatifine çevirir", "Görüntüyü gri yapar", "Görüntü değerlerini [0,1] aralığına dönüştürür", "Renk kanallarını ayırır", "Piksel boyutunu değiştirir"],
+      correct: 2
+    },
+    {
+      question: "label2rgb(L) fonksiyonu ne yapar?",
+      options: ["Etiketli nesneleri renkli hale getirir", "Resmi griye çevirir", "Histogramı eşitler", "Gürültü ekler", "Resmi döndürür"],
+      correct: 0
+    },
+    {
+      question: "MATLAB'de renkli bir görüntünün kırmızı kanalını almak için hangi ifade kullanılır?",
+      options: ["R = I(:,:,1);", "R = I(:,:,2);", "R = I(:,:,3);", "R = rgb2gray(I);", "R = im2bw(I);"],
+      correct: 0
+    },
+    {
+      question: "Watershed algoritması ne tür bir işlemde kullanılır?",
+      options: ["Segmentasyon", "Filtreleme", "Gürültü ekleme", "Sıkıştırma", "Kenar tespiti"],
+      correct: 0
+    },
+    {
+      question: "Edge detection algoritmalarının temel amacı nedir?",
+      options: ["Renk düzenleme", "Piksel sayısını artırmak", "Görüntüyü döndürmek", "Görüntüdeki nesne sınırlarını bulmak", "Görüntüyü sıkıştırmak"],
+      correct: 3
+    },
+    {
+      question: "Görüntü işleme nedir?",
+      options: ["Görüntüleri matematiksel işlemlerle analiz etme ve dönüştürme sürecidir", "Görüntüleri basitçe boyama işlemidir", "Görüntüleri yalnızca metne dönüştürme işlemidir", "Görüntülerin dosya adlarını değiştirmedir", "Ses sinyallerinin işlenmesidir"],
+      correct: 0
+    },
+    {
+      question: "Gri seviye görüntüde her piksel neyi temsil eder?",
+      options: ["Renk bilgisini", "Parlaklık değerini", "Sıcaklık bilgisini", "Piksel konumunu", "Kenar yoğunluğunu"],
+      correct: 1
+    },
+    {
+      question: "Binary görüntü nedir?",
+      options: ["Her pikselin sadece siyah veya beyaz olduğu görüntü", "Renkli bir görüntü", "16 bitlik bir görüntü", "Gri tonlamalı bir görüntü", "Gürültü içeren görüntü"],
+      correct: 0
+    },
+    {
+      question: "Histogram eşitleme işleminin amacı nedir?",
+      options: ["Görüntüyü büyütmek", "Renkleri değiştirmek", "Kontrastı artırmak", "Gürültü eklemek", "Dönüştürmek"],
+      correct: 2
+    },
+    {
+      question: "Fourier dönüşümü görüntü işlemede hangi amaçla kullanılır?",
+      options: ["Görüntü sıkıştırma", "Frekans analizini yapmak", "Gürültü artırmak", "Piksel renklendirmek", "Kontrast ayarı"],
+      correct: 1
+    },
+    {
+      question: "Dijital bir görüntüde her pikselin konumu hangi iki parametreyle belirlenir?",
+      options: ["X ve Y koordinatları", "Renk ve parlaklık", "Genişlik ve yükseklik", "RGB değerleri", "Zaman ve frekans"],
+      correct: 0
+    },
+    {
+      question: "8-bit gri seviye bir görüntüde kaç farklı gri ton bulunur?",
+      options: ["128", "64", "255", "256", "512"],
+      correct: 3
+    },
+    {
+      question: "Görüntü histogramı neyi gösterir?",
+      options: ["Piksel değerlerinin dağılımını", "Kenar yönelimlerini", "Renk doygunluğunu", "Parlaklık farklarını", "Frekans bileşenlerini"],
+      correct: 0
+    },
+    {
+      question: "Template matching yöntemi neyi amaçlar?",
+      options: ["Görüntü içinde belirli bir şeklin veya nesnenin yerini bulmak", "Renk dönüşümü yapmak", "Gürültü azaltmak", "Histogramı düzleştirmek", "Piksel sayısını azaltmak"],
+      correct: 0
+    },
+    {
+      question: "Görüntüde en yüksek gri seviye değeri genellikle neyi temsil eder?",
+      options: ["En parlak bölgeyi", "En karanlık bölgeyi", "Gürültüyü", "Orta tonları", "Kenarları"],
+      correct: 0
+    },
+    {
+      question: "Hough transform hangi amaçla kullanılır?",
+      options: ["Doğruları ve belirli şekilleri tespit etmek", "Renk dönüştürmek", "Histogram çizmek", "Kenar yumuşatma", "Gürültü eklemek"],
+      correct: 0
+    },
+    {
+      question: "Dijital bir görüntüde piksel neyi temsil eder?",
+      options: ["Görüntüdeki en küçük eleman ve parlaklık/rengi", "Görüntü boyutu", "Histogram değeri", "Nesne sayısı", "Kontrast"],
+      correct: 0
+    },
+    {
+      question: "Görüntüde kenar tespiti hangi amaca hizmet eder?",
+      options: ["Nesnelerin sınırlarını belirlemek", "Piksel değerlerini artırmak", "Histogramı eşitlemek", "Renkleri değiştirmek", "Gürültü eklemek"],
+      correct: 0
+    },
+    {
+      question: "Sobel, Prewitt ve Canny yöntemleri hangi işlem için kullanılır?",
+      options: ["Kenar tespiti", "Histogram eşitleme", "Gürültü azaltma", "Binary dönüşüm", "Renk uzayı dönüşümü"],
+      correct: 0
+    },
+    {
+      question: "Gaussian filtre hangi amaçla kullanılır?",
+      options: ["Kenar tespiti", "Gürültü azaltma ve yumuşatma", "Histogram eşitleme", "Thresholding", "Renk düzeltme"],
+      correct: 1
+    },
+    {
+      question: "Segmentasyon neyi amaçlar?",
+      options: ["Görüntüyü anlamlı bölgelere ayırmak", "Histogram eşitlemek", "Renkleri değiştirmek", "Gürültü eklemek", "Kenarları yumuşatmak"],
+      correct: 0
+    },
+    {
+      question: "RGB görüntüden gri tonlamalı görüntüye dönüşümde en yaygın kullanılan kanal ağırlıkları hangileridir?",
+      options: ["R=0.5, G=0.5, B=0", "R=0.3, G=0.59, B=0.11", "R=0.33, G=0.33, B=0.33", "R=0.25, G=0.5, B=0.25", "R=0.4, G=0.4, B=0.2"],
+      correct: 1
+    },
+    {
+      question: "Dijital görüntüde en parlak piksel değeri genellikle kaçtır?",
+      options: ["0", "128", "255", "100", "512"],
+      correct: 2
+    },
+    {
+      question: "Grayscale görüntüde en karanlık piksel değeri kaçtır?",
+      options: ["255", "128", "0", "1", "100"],
+      correct: 2
+    },
+    {
+      question: "Matlab dilinde görüntü işleme için hangi toolbox kullanılır?",
+      options: ["Signal Processing Toolbox", "Computer Vision Toolbox", "Image Processing Toolbox", "Deep Learning Toolbox", "Image Acquisition Toolbox"],
+      correct: 2
+    },
+    {
+      question: "Görüntü işlemede piksel neyi ifade eder?",
+      options: ["Görüntünün renk derinliği", "Görüntüdeki en küçük renkli birim", "Görüntünün çözünürlüğü", "Görüntünün dosya formatı", "Görüntünün parlaklık değeri"],
+      correct: 1
+    },
+    {
+      question: "Görüntü işlemede kullanılan Gabor filtreleri, genellikle hangi amaç için idealdir?",
+      options: ["Parlaklık düzeltme", "Renk uzayı dönüşümü", "Doku analizi ve tanıma", "Geometrik dönüşümler", "Histogram eşitleme"],
+      correct: 2
+    },
+    {
+      question: "HSV (Hue, Saturation, Value) renk uzayının ana avantajı nedir?",
+      options: ["Veri sıkıştırma için ideal olması", "Parlaklık, doygunluk ve renk tonunu sezgisel olarak ayırabilmesi", "Sadece siyah beyaz görüntüler için kullanılması", "Baskı endüstrisi için standart olması", "Yüksek çözünürlük sağlaması"],
+      correct: 1
+    },
+    {
+      question: "Görüntüde renk derinliği neyi ifade eder?",
+      options: ["Görüntünün boyutu", "Piksel başına düşen bit sayısı", "Görüntünün çözünürlüğü", "Renk tonu", "Parlaklık"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki düz çizgileri tespit etmek için kullanılan dönüşüm yöntemi hangisidir?",
+      options: ["Fourier", "Sobel", "Hough Line Transform", "Bilateral Filter", "Contour Grid"],
+      correct: 2
+    },
+    {
+      question: "JPEG sıkıştırma yöntemi hangi dönüşümü temel alır?",
+      options: ["Fourier Dönüşümü", "Ayrık Kosinüs Dönüşümü", "Wavelet Dönüşümü", "Hough Dönüşümü", "Radon Dönüşümü"],
+      correct: 1
+    },
+    {
+      question: "Hough Dönüşümü hangi amaçla kullanılır?",
+      options: ["Görüntüyü döndürmek", "Doğru ve daire gibi şekilleri tespit etmek", "Renkleri dönüştürmek", "Gürültüyü azaltmak", "Histogram eşitleme"],
+      correct: 1
+    },
+    {
+      question: "fft2(I) fonksiyonu ne işe yarar?",
+      options: ["Görüntüyü uzamsal alanda işler", "Görüntüyü frekans alanına dönüştürür", "Görüntüyü histogramlar", "Gürültü ekler", "Renk kanalını ayırır"],
+      correct: 1
+    },
+    {
+      question: "Hangi filtre görüntüdeki gürültüyü azaltmak için kullanılır?",
+      options: ["Sobel filtresi", "Laplace filtresi", "Gaussian filtresi", "Canny kenar algılayıcı", "Histogram eşitleyici"],
+      correct: 2
+    },
+    {
+      question: "Görüntü işleme sistemlerinde kenar algılamada Canny algoritması kaç aşamadan oluşur?",
+      options: ["2", "3", "4", "5", "6"],
+      correct: 3
+    },
+    {
+      question: "imgradient(Im) fonksiyonu neyi döndürür?",
+      options: ["Görüntünün histogramını", "Görüntü gradyan büyüklüğünü", "Gri tonlamayı", "Kenar çizgilerini", "Piksel sayısını"],
+      correct: 1
+    },
+    {
+      question: "Histogram eşitleme işlemi ne için kullanılır?",
+      options: ["Görüntü boyutunu değiştirmek", "Görüntüdeki gürültüyü azaltmak", "Kontrastı artırmak", "Renkleri dönüştürmek", "Kenarları tespit etmek"],
+      correct: 2
+    },
+    {
+      question: "Konvolüsyonel filtrelemede kullanılan çekirdeğin diğer adı nedir?",
+      options: ["Histogram", "Kernel", "Piksel", "Layer", "Vektör"],
+      correct: 1
+    },
+    {
+      question: "Piksel, dijital görüntüde neyi ifade eder?",
+      options: ["Görüntü boyutunu", "Görüntünün renk paletini", "En küçük görüntü birimini", "Görüntünün frekansını", "Görüntünün histogramını"],
+      correct: 2
+    },
+    {
+      question: "Görüntü döndürme işlemi hangi matematiksel dönüşüme dayanır?",
+      options: ["Ölçekleme", "Matris çarpımı", "Piksel kopyalama", "Kontrast germe", "Histogram kaydırma"],
+      correct: 1
+    },
+    {
+      question: "Görüntüde keskin geçişlerin bulunduğu bölgelere ne ad verilir?",
+      options: ["Alan", "Gürültü", "Kenar", "Segment", "Histogram"],
+      correct: 2
+    },
+    {
+      question: "Piksel gruplarının sayısal dağılımı hangi grafikle gösterilir?",
+      options: ["Fourier analizi", "Kernel matrisi", "Histogram", "Segmentasyon haritası", "GLCM"],
+      correct: 2
+    },
+    {
+      question: "Görüntü işleme algoritmalarında kernel ne anlama gelir?",
+      options: ["Görüntü dosyası", "İşlem matrisi", "Renk uzayı", "Piksel sayısı", "Histogram grafiği"],
+      correct: 1
+    },
+    {
+      question: "Görüntüde mask ne işe yarar?",
+      options: ["Filtre uygulama matrisidir", "Histogram grafiğidir", "Renk düzeltme aracıdır", "Kenar haritasıdır", "Segmentasyon sonucu"],
+      correct: 0
+    },
+    {
+      question: "Aşağıdaki işlemlerden hangisi görüntü geliştirme tekniği değildir?",
+      options: ["Histogram eşitleme", "Kenar algılama", "Kontrast artırma", "Gürültü giderme", "Filtreleme"],
+      correct: 1
+    },
+    {
+      question: "Histogram eşitleme ne işe yarar?",
+      options: ["Piksel siler", "Renkleri ters çevirir", "Kontrastı artırır", "Parlaklığı düşürür", "Gürültü ekler"],
+      correct: 2
+    },
+    {
+      question: "Bir görüntünün boyutunu değiştirmek neyi etkiler?",
+      options: ["Renk uzayını", "Piksel sayısını", "Histogramı", "Segmentasyonu", "Gürültü dağılımını"],
+      correct: 1
+    },
+    {
+      question: "Görüntüde benzerlik ölçümü için hangi metrik kullanılır?",
+      options: ["Euclidean Distance", "RGB Intensity", "Threshold", "Dilation Rate", "Histogram Width"],
+      correct: 0
+    },
+    {
+      question: "Görüntü işleme uygulamasında modelin genelleme başarısını artıran yaklaşım nedir?",
+      options: ["Cropping", "Model Scaling", "Data Augmentation", "ROI Rotation", "Hue Balancing"],
+      correct: 2
+    },
+    {
+      question: "JPEG sıkıştırma tekniği hangi tür bir sıkıştırmadır?",
+      options: ["Kayıpsız (Lossless)", "Kayıplı (Lossy)", "Hem kayıplı hem kayıpsız", "Sadece siyah-beyaz görüntüler için", "Vektörel bir sıkıştırma"],
+      correct: 1
+    },
+    {
+      question: "Evrişim işlemi görüntü işlemede ne için kullanılır?",
+      options: ["Görüntüyü yeniden boyutlandırmak", "Filtre uygulamak ve özellik çıkarmak", "Renk uzayını değiştirmek", "Görüntüyü döndürmek", "Sıkıştırmak"],
+      correct: 1
+    },
+    {
+      question: "8 bitlik gri tonlamalı bir görüntüde (grayscale), maksimum kaç farklı yoğunluk seviyesi bulunabilir?",
+      options: ["8", "64", "128", "256", "512"],
+      correct: 3
+    },
+    {
+      question: "Dijital bir görüntüdeki en küçük birime ne ad verilir?",
+      options: ["Voksel", "Piksel", "Nokta", "Element", "Bit"],
+      correct: 1
+    },
+    {
+      question: "Bir görüntünün kontrastını artırmak ne anlama gelir?",
+      options: ["Görüntüyü daha parlak yapmak", "Görüntüdeki en aydınlık ve en karanlık pikseller arasındaki farkı artırmak", "Görüntüdeki renk sayısını azaltmak", "Görüntüyü bulanıklaştırmak", "Görüntünün boyutunu büyütmek"],
+      correct: 1
+    },
+    {
+      question: "İkili Görüntü ne demektir?",
+      options: ["Sadece iki renkten oluşan bir görüntü", "Sadece siyah ve beyaz olmak üzere iki piksel değerine sahip görüntü", "İki farklı katmandan oluşan görüntü", "Çift çözünürlüklü görüntü", "Kırmızı ve Mavi kanalları olan görüntü"],
+      correct: 1
+    },
+    {
+      question: "OCR sisteminin temel amacı nedir?",
+      options: ["Barkodları okuma", "El yazısı veya basılı metni düzenlenebilir metin verisine dönüştürme", "İnsan yüzlerini tanıma", "Görüntüleri daha yüksek çözünürlüğe kavuşturma", "Geometrik şekilleri tespit etme"],
+      correct: 1
+    },
+    {
+      question: "Görüntüde sık kullanılan konvolüsyon boyutu nedir?",
+      options: ["5x5", "4x4", "3x3", "2x2", "7x7"],
+      correct: 2
+    },
+    {
+      question: "Görüntü işleme sürecinde ilk adım genellikle nedir?",
+      options: ["Segmentasyon", "Filtreleme", "Görüntü alımı", "Kenar tespiti", "Görüntü sınıflandırma"],
+      correct: 2
+    },
+    {
+      question: "Image segmentation işleminin amacı nedir?",
+      options: ["Görüntüyü sıkıştırmak", "Görüntüyü döndürmek", "Görüntüyü anlamlı parçalara ayırmak", "Görüntüyü kopyalamak", "Kenarları kaldırmak"],
+      correct: 2
+    },
+    {
+      question: "Görüntü işleme algoritmalarının çoğu hangi alanda daha yaygın kullanılır?",
+      options: ["Ses tanıma", "Veri tabanı yönetimi", "Görsel analiz ve karar sistemleri", "Ağ güvenliği", "Finansal tablolar"],
+      correct: 2
+    },
+    {
+      question: "Affin dönüşüm aşağıdakilerden hangisini içermez?",
+      options: ["Döndürme", "Kaydırma", "Ölçekleme", "Eğme", "Eğrilik düzeltme"],
+      correct: 4
+    },
+    {
+      question: "Görüntü işleme uygulamalarında template matching ne için kullanılır?",
+      options: ["Renk düzeltme", "Belirli desenleri bulma", "Segmentasyon", "Kenar tespiti", "Frekans azaltma"],
+      correct: 1
+    },
+    {
+      question: "Görüntü işleme algoritmalarında ground truth neyi ifade eder?",
+      options: ["Rastgele veri", "Tahmin sonucu", "Doğrulanmış gerçek veri", "Eğitim seti", "Görüntü çözünürlüğü"],
+      correct: 2
+    },
+    {
+      question: "Görüntü işleme sistemleri genellikle hangi birimle çalışır?",
+      options: ["Kilobit", "Piksel", "Hertz", "Lumen", "Watt"],
+      correct: 1
+    },
+    {
+      question: "Görüntü işleme algoritmalarının hızını artırmak için kullanılan donanım hangisidir?",
+      options: ["SSD", "GPU", "RAM", "HDD", "ROM"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki bir nesnenin merkez noktası hangi terimle ifade edilir?",
+      options: ["Boundary", "Centroid", "Orientation", "Eccentricity", "Solidity"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki nesneleri sınırlayan dikdörtgen yapıya ne ad verilir?",
+      options: ["Segment", "ROI", "Bounding Box", "Gradyan alanı", "Histogram kümesi"],
+      correct: 2
+    },
+    {
+      question: "roipoly(Im) fonksiyonu ne iş yapar?",
+      options: ["Renk kanallarını ayırır", "Kullanıcının seçtiği çokgen bölgeyi maskeleştirir", "Resmi döndürür", "Gürültü ekler", "Histogramı eşitler"],
+      correct: 1
+    },
+    {
+      question: "Dijital görüntüde ROI neyi ifade eder?",
+      options: ["Analiz yapılacak seçili bölgeyi", "Tüm görüntüyü", "Histogram tepe noktalarını", "Piksel yoğunluğunu", "Renk uzayını"],
+      correct: 0
+    },
+    {
+      question: "Görüntü işleme algoritmalarında ROI ne anlama gelir?",
+      options: ["Region of Interest", "Rate of Image", "Raster Output Interface", "Range of Intensity", "Region of Intensity"],
+      correct: 0
+    },
+    {
+      question: "Gaussian blur işlemi hangi amaçla yapılır?",
+      options: ["Kenarları keskinleştirmek", "Gürültüyü azaltmak ve yumuşatma yapmak", "Histogram eşitleme", "Thresholding", "Renk düzeltme"],
+      correct: 1
+    },
+    {
+      question: "Bir resme Gaussian Blur uygulamak için hangi parametre zorunludur?",
+      options: ["Kernel boyutu", "Resim boyutu", "Renk kanalı", "Histogram", "Dosya adı"],
+      correct: 0
+    },
+    {
+      question: "Aşağıdaki algoritmalardan hangisi nesne tanıma için kullanılır?",
+      options: ["Canny", "Template Matching", "Histogram", "Blur", "Binarization"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki kenarları daha belirgin hale getirmek için hangi işlem uygulanır?",
+      options: ["Sharpening", "Blurring", "Thresholding", "Dilation", "Averaging"],
+      correct: 0
+    },
+    {
+      question: "Görüntüde nesne sayısını belirlemek için kullanılan temel işlem hangisidir?",
+      options: ["Edge Detection", "Blurring", "Segmentation", "Cropping", "Filtering"],
+      correct: 2
+    },
+    {
+      question: "Görüntü yumuşatma işleminin amacı nedir?",
+      options: ["Gürültüyü azaltmak", "Kenarları artırmak", "Parlaklığı azaltmak", "Renkleri karıştırmak", "Boyutu küçültmek"],
+      correct: 0
+    },
+    {
+      question: "Görüntüdeki objenin şekil bilgisini en iyi tanımlayan terim hangisidir?",
+      options: ["Pixel", "Contour", "Histogram", "Intensity", "Frame"],
+      correct: 1
+    },
+    {
+      question: "Bir gri seviye görüntünün histogramını hesaplayan ve genellikle çizdiren fonksiyon hangisidir?",
+      options: ["imhist(Im)", "hist(Im)", "improfile(Im)", "histeq(Im)", "imcontour(Im)"],
+      correct: 0
+    },
+    {
+      question: "Özellik çıkarımı neyi ifade eder?",
+      options: ["Nesnelere ait anlamlı bilgileri elde etmek", "Histogram çizmek", "Binary dönüştürmek", "Renk dönüşümü", "Kenar yumuşatma"],
+      correct: 0
+    },
+    {
+      question: "Bir videodaki hareketli nesneleri arka plandan ayırmak için kullanılan yaygın bir yöntem hangisidir?",
+      options: ["Arka Plan Çıkarımı", "Histogram Eşitleme", "Kenar Algılama", "Renk Uzayı Dönüşümü", "Gama Düzeltmesi"],
+      correct: 0
+    },
+    {
+      question: "Bir resmi filtrelemek için hangi fonksiyonlar kullanılabilir?",
+      options: ["imfilter()", "conv2()", "filter2()", "hepsi", "hiçbiri"],
+      correct: 3
+    },
+    {
+      question: "Görüntüde konvolüsyon işlemi hangi amaçla yapılır?",
+      options: ["Filtreleme ve özellik çıkarımı için", "Gürültü eklemek için", "Piksel değerlerini rastgele değiştirmek için", "Renk dönüşümü yapmak için", "Dosya boyutunu azaltmak için"],
+      correct: 0
+    },
+    {
+      question: "Convolution işlemi sırasında kullanılan küçük matrislere ne ad verilir?",
+      options: ["Kernel", "Frame", "Threshold", "Pixel", "Mask"],
+      correct: 0
+    },
+    {
+      question: "fspecial('gaussian', [3 3], 0.5) ne üretir?",
+      options: ["Laplace çekirdeği", "Gauss bulanıklaştırma filtresi", "Ortalama filtresi", "Kenar bulma maskesi", "Sobel operatörü"],
+      correct: 1
+    },
+    {
+      question: "entropy(Im) fonksiyonu neyi hesaplar?",
+      options: ["Ortalama parlaklık", "Görüntüdeki bilgi miktarı", "Piksel yoğunluğu", "Kontrast", "Renk doygunluğu"],
+      correct: 1
+    },
+    {
+      question: "std2(I) fonksiyonu neyi verir?",
+      options: ["Görüntünün ortalaması", "Görüntünün varyansı", "Görüntü piksellerinin standart sapması", "En yüksek yoğunluk", "Piksel sayısı"],
+      correct: 2
+    },
+    {
+      question: "Laplace filtresi hangi türev tabanlı hesaplamaya dayanır?",
+      options: ["Birinci türev", "İkinci türev", "Üçüncü türev", "Ortalama", "Logaritmik türev"],
+      correct: 1
+    },
+    {
+      question: "Sobel operatörü, bir görüntüde neyi hesaplamak için kullanılır?",
+      options: ["Ortalama parlaklık", "İkinci türev", "Yerel varyans", "Gradyan büyüklüğü ve yönü", "İstatistiksel mod"],
+      correct: 3
+    },
+    {
+      question: "Görüntüde gürültüyü azaltırken kenarları koruyan filtre hangisidir?",
+      options: ["Ortalama", "Gaussian", "Laplace", "Bilateral", "Sobel"],
+      correct: 3
+    },
+    {
+      question: "Aşağıdakilerden hangisi bir kenar tespit yöntemidir?",
+      options: ["Canny", "Median", "Gaussian", "Bilateral", "Wiener"],
+      correct: 0
+    },
+    {
+      question: "Görüntüde Canny yöntemi hangi aşamaları içerir?",
+      options: ["Gaussian blur, gradient hesaplama, non-maximum suppression, threshold", "Median filtre, thresholding, erosion", "Histogram eşitleme, thresholding", "Fourier transform, inverse", "Binary dönüştürme, dilation"],
+      correct: 0
+    },
+    {
+      question: "Hangisi kenar bulma filtresi değildir?",
+      options: ["Sobel", "Prewitt", "Canny", "Laplacian", "Median"],
+      correct: 4
+    },
+    {
+      question: "Görüntüdeki gürültüyü azaltmak için hangi filtre tercih edilir?",
+      options: ["Laplace", "Sobel", "Median", "Prewitt", "Gradient"],
+      correct: 2
+    },
+    {
+      question: "Görüntüdeki istenmeyen küçük noktaları temizlemek için en etkili filtre hangisidir?",
+      options: ["Gaussian", "Median", "Laplace", "Sobel", "Bilateral"],
+      correct: 1
+    },
+    {
+      question: "Görüntüde keskin kenarları tespit eden filtre türü hangisidir?",
+      options: ["Median", "Gaussian", "Laplacian", "Bilateral", "Histogram Filter"],
+      correct: 2
+    },
+    {
+      question: "fspecial('average', [3 3]) ne oluşturur?",
+      options: ["Kenar belirleme filtresi", "Ortalama filtre", "Laplace filtresi", "Medyan filtre", "Gaussian filtre"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki kenarları belirginleştirmek için aşağıdaki filtrelerden hangi kullanılır?",
+      options: ["Laplace filtresi", "Gaussian filtresi", "Median filtresi", "Average filtresi", "Wiener filtresi"],
+      correct: 0
+    },
+    {
+      question: "Aşağıdaki filtrelerden hangisi keskinleştirme işlemi için kullanılır?",
+      options: ["Laplacian", "Gaussian", "Median", "Average", "Wiener"],
+      correct: 0
+    },
+    {
+      question: "imgaussfilt(I,2) komutu ne işe yarar?",
+      options: ["Median filtre uygular", "Laplace filtre uygular", "Gauss bulanıklaştırması uygular", "Kenar tespiti yapar", "Görüntüyü binary hale getirir"],
+      correct: 2
+    },
+    {
+      question: "medfilt2(Im,[5 5]) fonksiyonu ne yapar?",
+      options: ["Medyan filtresi uygular", "Ortalama filtre uygular", "Gaussian filtre uygular", "Kenar tespit eder", "Histogram eşitlemesi yapar"],
+      correct: 0
+    },
+    {
+      question: "Median filtre özellikle hangi gürültü türüne karşı etkilidir?",
+      options: ["Gauss gürültüsü", "Tuz-biber gürültüsü", "Speckle gürültüsü", "Poisson gürültüsü", "Rastgele gürültü"],
+      correct: 1
+    },
+    {
+      question: "graythresh(Im) fonksiyonu neyi hesaplar?",
+      options: ["Ortalama piksel değeri", "Maksimum piksel değeri", "Otsu yöntemi ile eşik değeri", "Minimum piksel değeri", "Renk kanalı farkı"],
+      correct: 2
+    },
+    {
+      question: "imbinarize(Im) komutu ne yapar?",
+      options: ["Renkli resmi griye çevirir", "Gri resmi otomatik eşikleme ile ikili hale getirir", "Renk doygunluğunu artırır", "Gürültüyü azaltır", "Histogram eşitlemesi yapar"],
+      correct: 1
+    },
+    {
+      question: "Bir resmi ikili yapmak için hangi eşikleme yöntemi kullanılabilir?",
+      options: ["imbinarize()", "im2bw()", "graythresh()", "hepsi", "hiçbiri"],
+      correct: 3
+    },
+    {
+      question: "Görüntüdeki gürültüyü azaltmak için hangi işlem uygulanır?",
+      options: ["Filtreleme", "Histogram eşitleme", "Eşikleme", "Kenar tespiti", "Fourier dönüşümü"],
+      correct: 0
+    },
+    {
+      question: "Görüntüdeki farklı nesneleri ayırt etmek için hangi teknik kullanılır?",
+      options: ["Histogram eşitleme", "Segmentasyon", "Eşikleme", "Kenar tespiti", "Piksel çoğaltma"],
+      correct: 1
+    },
+    {
+      question: "Görüntü işleme algoritmalarında eşikleme işleminin temel amacı nedir?",
+      options: ["Renk ayrıştırmak", "Görüntüyü bölgelere ayırmak", "Gürültü eklemek", "Renk derinliğini artırmak", "Piksel konumunu kaydetmek"],
+      correct: 1
+    },
+    {
+      question: "Görüntüdeki kenarları tespit etmek için genellikle ne hesaplanır?",
+      options: ["Ortalama", "Eşik", "Gradyan", "Histogram", "Parlaklık"],
+      correct: 2
+    },
+    {
+      question: "imclose işlemi ne yapar?",
+      options: ["Boşlukları doldurur ve nesneleri birleştirir", "Kenar bulanıklaştırır", "Histogram eşitler", "Renkleri değiştirir", "Piksel sayısını artırır"],
+      correct: 0
+    },
+    {
+      question: "İkili bir görüntüdeki nesnelerin içindeki küçük siyah delikleri doldurmak için hangi fonksiyon kullanılır?",
+      options: ["imclose(Im, se)", "bwareaopen(Im, 50)", "imfill(Im, 'holes')", "imerode(Im, se)", "imopen(Im, se)"],
+      correct: 2
+    },
+    {
+      question: "imclose işlemi neyi ifade eder?",
+      options: ["Erozyon ardından genleşme", "Genleşme ardından erozyon", "Binary eşikleme", "Gürültü ekleme", "Histogram düzleştirme"],
+      correct: 1
+    },
+    {
+      question: "imopen işlemi neyi ifade eder?",
+      options: ["Erozyon ardından genleşme", "Genleşme ardından erozyon", "Gürültü ekleme", "Renk dönüşümü", "Histogram eşitleme"],
+      correct: 0
+    },
+    {
+      question: "Hangisi morfolojik bir işlemdir?",
+      options: ["rgb2gray()", "imopen()", "imresize()", "imread()", "imshow()"],
+      correct: 1
+    },
+    {
+      question: "Morfolojik işlemlerden hangisi önce aşındırma sonra genişletme uygular?",
+      options: ["Erosion", "Dilation", "Closing", "Opening", "Thresholding"],
+      correct: 3
+    },
+    {
+      question: "Morfolojik işlemlerden hangisi önce genişletme sonra aşındırma uygular?",
+      options: ["Erosion", "Dilation", "Opening", "Closing", "Skeletonization"],
+      correct: 3
+    },
+    {
+      question: "Opening hangi etkiyi yapar?",
+      options: ["Küçük nesneleri ve gürültüyü kaldırır", "Nesneleri büyütür", "Kenarları keskinleştirir", "Renkleri değiştirir", "Histogramı eşitler"],
+      correct: 0
+    },
+    {
+      question: "Açma morfolojik operasyonu hangi iki temel işlemin birleşimidir?",
+      options: ["Dilation ardından Erosion", "Erosion ardından Dilation", "İki kez Erosion", "İki kez Dilation", "Siyah delikleri doldurma"],
+      correct: 1
+    },
+    {
+      question: "Kapama morfolojik operasyonu hangi iki temel işlemin birleşimidir?",
+      options: ["Dilation ardından Erosion", "Erosion ardından Dilation", "Siyah delikleri doldurma", "Kenarları temizleme", "İki kez Dilation"],
+      correct: 0
+    },
+    {
+      question: "bwareaopen(Im, 50) komutu ne yapar?",
+      options: ["Resmi bulanıklaştırır", "50 pikselden küçük objeleri kaldırır", "Resmi büyütür", "Renk doygunluğunu azaltır", "Kenarları kalınlaştırır"],
+      correct: 1
+    },
+    {
+      question: "Erozyon işlemi morfolojik olarak ne yapar?",
+      options: ["Parlaklığı artırır", "Nesneleri büyütür", "Nesneleri küçültür", "Gürültüyü artırır", "Kenarları yumuşatır"],
+      correct: 2
+    },
+    {
+      question: "imerode(I,SE) işlemi ne yapar?",
+      options: ["Nesneleri büyütür", "Nesneleri küçültür", "Kenar bulur", "Renk düzeltir", "Histogram eşitlemesi yapar"],
+      correct: 1
+    },
+    {
+      question: "Dilation işlemi görüntü üzerinde nasıl bir etki oluşturur?",
+      options: ["Nesneleri büyütür", "Nesneleri küçültür", "Gürültü ekler", "Renkleri değiştirir", "Kontrastı azaltır"],
+      correct: 0
+    },
+    {
+      question: "imdilate(I,SE) işlemi ne yapar?",
+      options: ["Nesneleri küçültür", "Nesneleri büyütür", "Gürültü azaltır", "Kenarları yumuşatır", "Alan hesaplar"],
+      correct: 1
+    },
+    {
+      question: "Düşük geçirgen filtre ne işe yarar?",
+      options: ["Gürültüyü azaltır ve görüntüyü yumuşatır", "Kenarları belirginleştirir", "Kontrastı düşürür", "Renkleri değiştirir", "Parlaklığı artırır"],
+      correct: 0
+    },
+    {
+      question: "RGB renk uzayının dezavantajı nedir?",
+      options: ["Yüksek depolama gerektirmesi", "Parlaklık ve renk bilgisi birbirine karışır", "Sadece siyah-beyaz görüntüler için uygun olması", "Düşük çözünürlük sağlaması", "Sıkıştırma için verimsiz olması"],
+      correct: 1
+    },
+    {
+      question: "Düşük geçirgen filtre örneği hangisidir?",
+      options: ["Sobel filtresi", "Laplacian filtresi", "Mean filtresi", "Canny kenar dedektörü", "Prewitt filtresi"],
+      correct: 2
+    },
+    {
+      question: "Gaussian blur hangi tür filtredir?",
+      options: ["Lineer düşük geçirgen filtre", "Non-lineer filtre", "High-pass filtre", "Edge detection", "Binary filter"],
+      correct: 0
+    },
+    {
+      question: "Bir görüntüde detayları yumuşatmak için hangi tür filtre tercih edilir?",
+      options: ["Düşük geçiren filtre", "Yüksek geçiren filtre", "Laplace filtresi", "Kenar algılayıcı", "Histogram düzenleme"],
+      correct: 0
+    },
+    {
+      question: "Kenarları bulmak için kullanılan Sobel filtresi hangi tür filtredir?",
+      options: ["Düşük geçiren", "Yüksek geçiren", "Ortalama", "Median", "Gauss"],
+      correct: 1
+    },
+    {
+      question: "Gaussian filtresi ne tür bir filtre olarak bilinir?",
+      options: ["Düşük geçiren filtre", "Yüksek geçiren filtre", "Bant geçiren filtre", "Adaptif filtre", "Median filtre"],
+      correct: 0
+    },
+    {
+      question: "Görüntüde parlaklık değişimlerini daha düzgün hale getiren işlem nedir?",
+      options: ["Histogram eşitleme", "Eşikleme", "Düşük geçirgen filtreleme", "Yüksek geçirgen filtreleme", "Fourier dönüşümü"],
+      correct: 2
+    },
+    {
+      question: "Hangisi bir yüksek geçiren filtre örneğidir?",
+      options: ["Gaussian bulanıklaştırma", "Median filtresi", "Laplacian filtresi", "Ortalama filtresi", "Histogram eşitleme"],
+      correct: 2
+    },
+    {
+      question: "Görüntüdeki histogram dar bir aralıkta toplanmışsa bu neyi gösterir?",
+      options: ["Kontrastın düşük olduğunu", "Gürültünün arttığını", "Renk sayısının fazla olduğunu", "Keskinliğin arttığını", "Frekans bileşenlerinin arttığını"],
+      correct: 0
+    },
+    {
+      question: "Histogramın geniş bir aralığa yayılması neyi gösterir?",
+      options: ["Kontrastın yüksek olduğunu", "Kontrastın düşük olduğunu", "Gürültünün az olduğunu", "Kenar yoğunluğunu", "Piksel değerlerinin eşit dağıldığını"],
+      correct: 0
+    }
+  ];
+
+  useEffect(() => {
+    // Soruları karıştır
+    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+    setQuestions(shuffled);
+  }, []);
+
+  const currentQuestion = questions[currentIndex];
+
+  const handleAnswerClick = (index) => {
+    setSelectedAnswer(index);
+    const correct = index === currentQuestion.correct;
+    setIsCorrect(correct);
+
+    if (correct) {
+      setScore(score + 1);
+      
+      // Doğru cevap - sonraki soruya geç
+      setTimeout(() => {
+        const newAnswered = [...answeredQuestions, currentIndex];
+        setAnsweredQuestions(newAnswered);
+        
+        if (newAnswered.length === questions.length) {
+          setIsFinished(true);
+        } else {
+          setCurrentIndex(currentIndex + 1);
+          setSelectedAnswer(null);
+          setIsCorrect(null);
+        }
+      }, 1500);
+    }
+  };
+
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Yükleniyor...</div>
+      </div>
+    );
+  }
+
+  if (isFinished) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+          <Award className="w-20 h-20 text-yellow-500 mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">SINAV BİTTİ!</h1>
+          <div className="text-6xl font-bold text-indigo-600 mb-4">
+            {score}/{questions.length}
+          </div>
+          <p className="text-xl text-gray-600 mb-6">
+            Başarı Oranı: {Math.round((score / questions.length) * 100)}%
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            Yeniden Başla
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-4xl mx-auto py-8">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold text-gray-800">Görüntü İşleme Testi</h1>
+            <div className="text-lg font-semibold text-indigo-600">
+              Skor: {score}/{answeredQuestions.length}
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div
+              className="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+              style={{ width: `${(answeredQuestions.length / questions.length) * 100}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600 mt-2">
+            Soru {answeredQuestions.length + 1} / {questions.length}
+          </p>
+        </div>
+
+        {/* Question Card */}
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">
+            {currentQuestion.question}
+          </h2>
+
+          <div className="space-y-3">
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = selectedAnswer === index;
+              const isCorrectAnswer = index === currentQuestion.correct;
+              const showResult = selectedAnswer !== null;
+
+              let bgColor = "bg-gray-50 hover:bg-gray-100";
+              let borderColor = "border-gray-200";
+              let textColor = "text-gray-800";
+
+              if (showResult) {
+                if (isCorrectAnswer) {
+                  bgColor = "bg-green-50";
+                  borderColor = "border-green-500";
+                  textColor = "text-green-800";
+                } else if (isSelected && !isCorrect) {
+                  bgColor = "bg-red-50";
+                  borderColor = "border-red-500";
+                  textColor = "text-red-800";
+                }
+              }
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAnswerClick(index)}
+                  disabled={selectedAnswer !== null}
+                  className={`w-full p-4 rounded-lg border-2 ${borderColor} ${bgColor} ${textColor} text-left font-medium transition-all duration-200 flex items-center justify-between ${
+                    selectedAnswer === null ? 'cursor-pointer' : 'cursor-not-allowed'
+                  }`}
+                >
+                  <span className="flex items-center">
+                    <span className="mr-3 font-bold">{String.fromCharCode(97 + index)})</span>
+                    {option}
+                  </span>
+                  {showResult && isCorrectAnswer && (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  )}
+                  {showResult && isSelected && !isCorrect && (
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Feedback Message */}
+          {selectedAnswer !== null && (
+            <div className={`mt-6 p-4 rounded-lg ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              <p className="font-semibold text-center">
+                {isCorrect ? '✓ Doğru! Bir sonraki soruya geçiliyor...' : '✗ Yanlış! Doğru cevabı bulana kadar tekrar deneyin.'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6 rounded">
+          <p className="text-sm text-blue-800">
+            <strong>Not:</strong> Doğru cevabı bulana kadar bir sonraki soruya geçemezsiniz.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QuizApp;
